@@ -23,6 +23,8 @@ public class UserData implements Serializable{
 	public String userName;
 	public String email;
 	public Boolean active;
+	public Long mobile;
+	
 	public Set<String> roles;
 	public String token;
 	
@@ -69,5 +71,13 @@ public class UserData implements Serializable{
 		this.token = token;
 	}
 	
+	public Long getMobile() {
+		return mobile;
+	}
+
+	public void setMobile(Long mobile) {
+		this.mobile = mobile;
+	}
+
 	
 }

@@ -1,41 +1,35 @@
 /**
  * 
  */
-package com.ss.model.data;
+package com.ss.model.dto;
 
 /**
  * @author sachin
  *
  */
-public class SignUpRequestData {
+public class UserDto {
+
 	public String userName;
-	public String password;
 	public String email;
+	public Boolean active;
 	public Long mobile;
-	public AddressData addressData;
-	
 	public String getUserName() {
 		return userName;
 	}
-
 	public void setUserName(String userName) {
 		this.userName = userName;
 	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
 	public String getEmail() {
 		return email;
 	}
-
 	public void setEmail(String email) {
 		this.email = email;
+	}
+	public Boolean getActive() {
+		return active;
+	}
+	public void setActive(Boolean active) {
+		this.active = active;
 	}
 
 	public Long getMobile() {
@@ -45,13 +39,5 @@ public class SignUpRequestData {
 	public void setMobile(Long mobile) {
 		this.mobile = mobile;
 	}
-
-	public AddressData getAddressData() {
-		return addressData;
-	}
-
-	public void setAddressData(AddressData addressData) {
-		this.addressData = addressData;
-	}
-	
 }
+

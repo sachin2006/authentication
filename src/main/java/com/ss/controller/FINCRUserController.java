@@ -3,6 +3,10 @@
  */
 package com.ss.controller;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +25,7 @@ import com.ss.model.data.FINCRResponseEntity;
 import com.ss.model.data.SignInRequestData;
 import com.ss.model.data.SignUpRequestData;
 import com.ss.model.data.UserData;
+import com.ss.model.dto.UserDto;
 
 /**
  * @author sachin
@@ -30,9 +35,12 @@ import com.ss.model.data.UserData;
 public class FINCRUserController {
 
 	Logger logger = LoggerFactory.getLogger(FINCRUserController.class);
-	
+
 	@Autowired
 	UserFacade userFacade;
+
+	@Autowired
+	private ModelMapper modelMapper;
 
 	@RequestMapping(value = "/hello")
 	public String hello() {
@@ -52,7 +60,8 @@ public class FINCRUserController {
 			logger.error("Email already present." + duplicateExecption);
 			return ResponseEntity.badRequest().body(FINCRRespEntity);
 		}
-		logger.info(String.format("User with email id: %s is Created, but profile is inactive.", signUpRequest.getUserName()));
+		logger.info(String.format("User with email id: %s is Created, but profile is inactive.",
+				signUpRequest.getUserName()));
 		return ResponseEntity.status(HttpStatus.CREATED).body(FINCRRespEntity);
 	}
 
@@ -61,6 +70,7 @@ public class FINCRUserController {
 			throws Exception {
 		FINCRResponseEntity<UserData> FINCRRespEntity = new FINCRResponseEntity<UserData>();
 		try {
+			userFacade.evitUserFromCache(signInData.getUserName());
 			User userDetails = userFacade.athenticateUser(signInData);
 			UserData userData = userFacade.generateAthenticationToken(userDetails);
 			FINCRRespEntity.setData(userData);
@@ -71,5 +81,55 @@ public class FINCRUserController {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FINCRRespEntity);
 		}
 		return ResponseEntity.ok().body(FINCRRespEntity);
+	}
+
+	@RequestMapping(value = "/auth/logout", method = RequestMethod.POST)
+	public ResponseEntity<FINCRResponseEntity<UserData>> signOut(@RequestBody SignInRequestData signInData) {
+		FINCRResponseEntity<UserData> FINCRRespEntity = new FINCRResponseEntity<UserData>();
+		try {
+			userFacade.evitUserFromCache(signInData.getUserName());
+			FINCRRespEntity.setMessage("SuccessFully logged out");
+		} catch (Exception e) {
+			FINCRRespEntity.setErrors("Error while logging user out.");
+			logger.error("EhCache error while logging user out." + e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(FINCRRespEntity);
+		}
+		return ResponseEntity.ok().body(FINCRRespEntity);
+	}
+
+	@RequestMapping(value = "/auth/requestAccess", method = RequestMethod.GET)
+	public ResponseEntity<FINCRResponseEntity<List<UserDto>>> getAllUserForRequestAccess() {
+		FINCRResponseEntity<List<UserDto>> FINCRRespEntity = new FINCRResponseEntity<List<UserDto>>();
+		List<UserData> userList = userFacade.getAllUserspendingForAccessGrant();
+		FINCRRespEntity.setData(userList.stream().map(this::convertToDto).collect(Collectors.toList()));
+
+		return ResponseEntity.ok().body(FINCRRespEntity);
+	}
+	
+	@RequestMapping(value = "/auth/updateAccess", method = RequestMethod.POST)
+	public ResponseEntity<FINCRResponseEntity<String>> grantAccess(@RequestBody List<UserDto> userDto) {
+		FINCRResponseEntity<String> FINCRRespEntity = new FINCRResponseEntity<String>();
+		List<UserData> userList = userDto.stream().map(this::convertToEntity).collect(Collectors.toList());
+		int count = userFacade.updateGrantAccess(userList);
+		logger.info(String.format("No. of user granted access is : %s", count));
+		
+		FINCRRespEntity.setMessage(String.format("Granted access to %s accounts.", count));
+		return ResponseEntity.ok().body(FINCRRespEntity);
+	}
+	
+	/**
+	 * Function to create userDto object from UserData
+	 * 
+	 * @param userData
+	 * @return {@link UserDto}
+	 */
+	private UserDto convertToDto(UserData userData) {
+		UserDto userDto = modelMapper.map(userData, UserDto.class);
+		return userDto;
+	}
+	
+	private UserData convertToEntity(UserDto postDto) {
+		UserData userData = modelMapper.map(postDto, UserData.class);
+		return userData;
 	}
 }

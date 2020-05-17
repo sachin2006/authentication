@@ -31,6 +31,7 @@ public class SignUpDataToUserPopulator implements Populator<SignUpRequestData, F
 		target.setUserName(source.getUserName());
 		target.setEmail(source.getEmail());
 		target.setMobile(source.getMobile());
+		target.setPassword(source.getPassword());
 		target.setActive(Boolean.FALSE);
 		Role role = roleRepository.findByName("USER");
 		roles.add(role);	
